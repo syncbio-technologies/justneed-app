@@ -1,0 +1,701 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  TouchableOpacity,
+  Alert,
+  useWindowDimensions,
+  Image,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { PanGestureHandler, State, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SwipeCard } from '../components/SwipeCard';
+import SearchFilter from '../components/SearchFilter';
+import { Job } from '../types';
+import { jobService } from '../services/jobService';
+import { useAuth } from '../context/AuthContext';
+import { useFavorites } from '../context/FavoritesContext';
+import { useGoogleAuth } from '../services/googleAuthService';
+import { colors } from '../constants/colors';
+import { spacing, borderRadius } from '../constants/spacing';
+import { typography } from '../constants/typography';
+import { shadows } from '../constants/shadows';
+import justNeedLogo from '../../assets/logo.png';
+import ApplyModal from '../components/ApplyModal'; // Import the component you created
+const SWIPE_THRESHOLD_RATIO = 0.25;
+
+export default function SwipeScreen({ navigation }: any) {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<any>({});
+  const [isCardExpanded, setIsCardExpanded] = useState(false);
+  const [lastSwipedJob, setLastSwipedJob] = useState<{ job: Job; direction: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { user, logout } = useAuth();
+  const { addFavorite, removeFavorite } = useFavorites();
+  const { signOut } = useGoogleAuth();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  const SWIPE_THRESHOLD = windowWidth * SWIPE_THRESHOLD_RATIO;
+
+  const position = useRef(new Animated.ValueXY()).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+
+  useEffect(() => {
+    // Only load jobs if user is logged in
+    if (user) {
+      loadJobs();
+    } else {
+      // User not logged in - clear state and set loading to false
+      setJobs([]);
+      setCurrentIndex(0);
+      setLastSwipedJob(null);
+      setFilters({});
+      setSearchQuery('');
+      setLoading(false);
+    }
+  }, [filters, user]);
+
+  const loadJobs = async (reset: boolean = false) => {
+    if (!user) {
+      console.warn('Cannot load jobs: User not logged in');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (reset) {
+        setCurrentIndex(0);
+      }
+      const availableJobs = await jobService.getJobs(filters);
+      setJobs(availableJobs);
+      console.log(`Loaded ${availableJobs.length} jobs with filters:`, filters);
+    } catch (error) {
+      console.error('Error loading jobs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (newFilters: any) => {
+    console.log('Applying filters:', newFilters);
+    setFilters(newFilters);
+    setSearchQuery(newFilters.search || '');
+    setCurrentIndex(0);
+  };
+
+  const onGestureEvent = Animated.event(
+    [{ nativeEvent: { translationX: position.x, translationY: position.y } }],
+    { useNativeDriver: true }
+  );
+
+  const onHandlerStateChange = (event: any) => {
+    const { state, translationX, translationY } = event.nativeEvent;
+
+    if (state === State.END) {
+      const absX = Math.abs(translationX);
+      const absY = Math.abs(translationY);
+
+      // Only swipe if horizontal movement is dominant
+      if (absX > absY && absX > SWIPE_THRESHOLD) {
+        if (translationX > 0) {
+          forceSwipe('right');
+        } else {
+          forceSwipe('left');
+        }
+      } else {
+        resetPosition();
+      }
+    }
+  };
+
+  const forceSwipe = (direction: 'left' | 'right') => {
+    let x = 0;
+
+    if (direction === 'right') {
+      x = windowWidth * 1.5;
+    } else if (direction === 'left') {
+      x = -(windowWidth * 1.5);
+    }
+
+    Animated.parallel([
+      Animated.timing(position, {
+        toValue: { x, y: 0 },
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => onSwipeComplete(direction));
+  };
+
+  const onSwipeComplete = async (direction: 'left' | 'right') => {
+    const nextIndex = currentIndex + 1;
+
+    if (currentIndex >= jobs.length) {
+      position.setValue({ x: 0, y: 0 });
+      opacity.setValue(1);
+      return;
+    }
+
+    const currentJob = jobs[currentIndex];
+    setLastSwipedJob({ job: currentJob, direction });
+
+    if (direction === 'right') {
+      await applyToCurrentJob();
+    } else if (direction === 'left') {
+      await skipCurrentJob();
+    }
+
+    position.setValue({ x: 0, y: 0 });
+    opacity.setValue(1);
+    setIsCardExpanded(false);
+    setCurrentIndex(nextIndex);
+  };
+
+  const handleUndo = () => {
+    if (lastSwipedJob && currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setLastSwipedJob(null);
+    }
+  };
+
+  const resetPosition = () => {
+    Animated.spring(position, {
+      toValue: { x: 0, y: 0 },
+      useNativeDriver: true,
+      friction: 5,
+    }).start();
+  };
+
+  const handleSkip = () => {
+    forceSwipe('left');
+  };
+
+  const handleAccept = () => {
+    forceSwipe('right');
+  };
+
+  const applyToCurrentJob = async () => {
+    if (currentIndex >= jobs.length) return;
+
+    const currentJob = jobs[currentIndex];
+
+    if (!currentJob) return;
+
+    if (!user) {
+      Alert.alert('Error', 'User not found. Please log in again.');
+      return;
+    }
+
+    // NEW LOGIC: Open the Pop-up instead of immediate API call
+    setSelectedJob(currentJob);
+    setModalVisible(true);
+  };
+
+  const skipCurrentJob = async () => {
+    if (currentIndex >= jobs.length) return;
+
+    const currentJob = jobs[currentIndex];
+
+    if (!currentJob) {
+      return;
+    }
+
+    try {
+      await jobService.markJobAsSwiped(currentJob.id);
+    } catch (error) {
+      // Silent fail
+    }
+  };
+
+  const handleFilter = () => {
+    setShowFilters(true);
+  };
+
+  const handleCardExpandChange = (isExpanded: boolean) => {
+    setIsCardExpanded(isExpanded);
+  };
+
+  const handleLogout = async () => {
+    const performLogout = async () => {
+      try {
+        console.log('[SwipeScreen] Starting logout process...');
+        const callback = Platform.OS === 'web' ? undefined : signOut;
+        await logout(callback);
+        console.log('[SwipeScreen] Logout completed, navigation will be handled by AuthContext');
+        // Don't manually reset navigation - let AuthContext handle it
+        // The AppNavigator will automatically redirect to Login when user becomes null
+      } catch (error) {
+        console.error('[SwipeScreen] Logout error:', error);
+        Alert.alert('Error', 'Failed to logout');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // Alert no-op on web; logout immediately
+      await performLogout();
+      return;
+    }
+
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', onPress: () => { }, style: 'cancel' },
+      { text: 'Logout', onPress: performLogout, style: 'destructive' },
+    ]);
+  };
+
+  const handleFinalConfirmApply = async () => {
+    if (!selectedJob || !user) return;
+
+    try {
+      const result = await jobService.applyWithSkillCard(selectedJob.id, selectedJob.title);
+
+      if (result.success) {
+        Alert.alert('Success', 'Application sent to Recruiter email!');
+        setModalVisible(false);
+        // Mark job as applied locally or fetch new jobs? 
+        // For now, we already proceed to the next card via onSwipeComplete.
+      } else {
+        Alert.alert('Error', result.message || 'Failed to send application.');
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      Alert.alert('Error', 'Connection failed. Please try again.');
+    }
+  };
+
+
+
+
+  const renderCards = () => {
+    // Check if user is logged in
+    if (!user) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="log-in-outline" size={80} color={colors.gold} />
+          <Text style={styles.emptyTitle}>Welcome to JustNeed</Text>
+          <Text style={styles.emptyText}>
+            Please log in to browse and apply to jobs.
+          </Text>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={styles.refreshText}>Log In</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (loading) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Loading jobs...</Text>
+        </View>
+      );
+    }
+
+    if (currentIndex >= jobs.length) {
+      const hasFilters = Object.keys(filters).some(key => filters[key]);
+
+      return (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="checkmark-circle-outline" size={80} color={colors.gold} />
+          <Text style={styles.emptyTitle}>
+            {hasFilters ? 'No Jobs Found' : 'No More Jobs!'}
+          </Text>
+          <Text style={styles.emptyText}>
+            {hasFilters
+              ? 'Try adjusting your filters or search terms.'
+              : "You've reviewed all available positions."}
+          </Text>
+          {hasFilters ? (
+            <TouchableOpacity style={styles.refreshButton} onPress={() => handleSearch({})}>
+              <Text style={styles.refreshText}>Clear Filters</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.refreshButton} onPress={() => loadJobs(true)}>
+              <Text style={styles.refreshText}>Refresh</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    }
+
+    const cardsToShow = Math.min(3, jobs.length - currentIndex);
+    const visibleJobs = jobs.slice(currentIndex, currentIndex + cardsToShow);
+
+    return visibleJobs
+      .map((job: Job, index: number) => {
+        const isTopCard = index === 0;
+        const scale = 1 - (index * 0.02);
+        const translateY = index * 12;
+
+        if (isTopCard) {
+          const acceptOpacity = position.x.interpolate({
+            inputRange: [0, windowWidth * 0.5],
+            outputRange: [0, 0.3],
+            extrapolate: 'clamp',
+          });
+
+          const rejectOpacity = position.x.interpolate({
+            inputRange: [-(windowWidth * 0.5), 0],
+            outputRange: [0.3, 0],
+            extrapolate: 'clamp',
+          });
+
+          return (
+            <PanGestureHandler
+              key={job.id}
+              onGestureEvent={onGestureEvent}
+              onHandlerStateChange={onHandlerStateChange}
+              activeOffsetX={[-15, 15]}
+              failOffsetY={[-20, 20]}
+            >
+              <Animated.View
+                style={[
+                  styles.cardContainer,
+                  {
+                    width: windowWidth * 0.9,
+                    transform: [
+                      { translateX: position.x },
+                      { translateY: 0 },
+                      {
+                        rotate: position.x.interpolate({
+                          inputRange: [-windowWidth, 0, windowWidth],
+                          outputRange: ['-30deg', '0deg', '30deg'],
+                        })
+                      },
+                      { scale: scale },
+                      { translateY: translateY },
+                    ],
+                    opacity: opacity,
+                    zIndex: 1000 - index,
+                  },
+                ]}
+              >
+                <SwipeCard
+                  job={job}
+                  onFavouriteToggle={async (jobId: string, isFavourite: boolean) => {
+                    if (!user) return;
+                    try {
+                      if (isFavourite) {
+                        await jobService.addToFavourites(user.id, job);
+                        addFavorite(job);
+                      } else {
+                        await jobService.removeFromFavourites(user.id, jobId);
+                        removeFavorite(jobId);
+                      }
+                    } catch (error) {
+                      console.error('Error toggling favourite:', error);
+                    }
+                  }}
+                  onExpandChange={handleCardExpandChange}
+                />
+
+                <Animated.View
+                  style={[styles.swipeOverlay, styles.acceptOverlay, { opacity: acceptOpacity }]}
+                >
+                  <View style={styles.swipeLabel}>
+                    <Ionicons name="checkmark-circle" size={60} color={colors.gold} />
+                    <Text style={styles.swipeLabelText}>APPLY</Text>
+                  </View>
+                </Animated.View>
+
+                <Animated.View
+                  style={[styles.swipeOverlay, styles.rejectOverlay, { opacity: rejectOpacity }]}
+                >
+                  <View style={styles.swipeLabel}>
+                    <Ionicons name="close-circle" size={60} color={colors.gold} />
+                    <Text style={styles.swipeLabelText}>SKIP</Text>
+                  </View>
+                </Animated.View>
+              </Animated.View>
+            </PanGestureHandler>
+          );
+        }
+
+        return (
+          <View
+            key={job.id}
+            style={[
+              styles.cardContainer,
+              {
+                width: windowWidth * 0.9,
+                transform: [{ scale: scale }, { translateY: translateY }],
+                zIndex: 1000 - index,
+              },
+            ]}
+          >
+            <SwipeCard
+              job={job}
+              onPress={() => navigation.navigate('JobDetails', { jobId: job.id })}
+            />
+          </View>
+        );
+      })
+      .reverse();
+  };
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        {/* Top Bar */}
+        <View style={styles.topBar}>
+          {/* Left: Logo + wordmark */}
+          <View style={styles.leftSection}>
+            <View style={styles.logoClip}>
+              <Image
+                source={justNeedLogo}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.brandWordmark}>JustNeed</Text>
+          </View>
+
+          {/* Right: Action Icons */}
+          <View style={styles.rightSection}>
+            {/* Filter */}
+            <TouchableOpacity style={styles.modernIconButton} onPress={handleFilter}>
+              <Ionicons name="funnel-outline" size={22} color={colors.gold} />
+              {Object.keys(filters).length > 0 && <View style={styles.filterDot} />}
+            </TouchableOpacity>
+
+            {/* Skill Card */}
+            {/* <TouchableOpacity style={styles.modernIconButton} onPress={() => navigation.navigate('Skills')}>
+            <Ionicons name="id-card-outline" size={22} color={colors.text} />
+          </TouchableOpacity> */}
+
+            {/* Menu */}
+            <TouchableOpacity style={styles.modernIconButton} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={22} color={colors.gold} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Cards Container */}
+        <View style={styles.cardsContainer}>{renderCards()}</View>
+
+        {/* Action Buttons */}
+        {currentIndex < jobs.length && (
+          <View style={styles.actionsContainer}>
+            {lastSwipedJob && currentIndex > 0 && (
+              <TouchableOpacity style={[styles.actionButton, styles.undoButton]} onPress={handleUndo}>
+                <Ionicons name="arrow-undo" size={16} color={colors.gold} />
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={[styles.actionButton, styles.skipButton]} onPress={handleSkip}>
+              <Ionicons name="close" size={16} color={colors.gold} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.actionButton, styles.acceptButton]} onPress={handleAccept}>
+              <Ionicons name="checkmark" size={16} color={colors.gold} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <SearchFilter
+          visible={showFilters}
+          onClose={() => setShowFilters(false)}
+          onSearch={handleSearch}
+        />
+        {/* Add this Modal here */}
+        <ApplyModal
+          visible={isModalVisible}
+          jobTitle={selectedJob?.title || ""}
+          onClose={() => setModalVisible(false)}
+          onSend={handleFinalConfirmApply}
+        />
+
+
+      </SafeAreaView>
+    </GestureHandlerRootView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#121212',
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: '#1E1E1E',
+    borderBottomWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.sm,
+  },
+  // The PNG has ~18% baked-in white padding. Wrap in a clipping View and
+  // render the image oversized so the white border falls outside the bounds.
+  logoClip: {
+    width: 44,
+    height: 44,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 68,
+    height: 68,
+  },
+  brandWordmark: {
+    ...typography.h2,
+    color: colors.gold,
+    fontWeight: '700',
+  },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  modernIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  filterDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.gold,
+  },
+  cardsContainer: {
+    flex: 0.85,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: spacing.xl,
+  },
+  cardContainer: {
+    position: 'absolute',
+    // Absolute children ignore the parent's paddingTop; push down explicitly
+    // so the card never kisses the header.
+    top: spacing.xl,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: 20,
+    zIndex: 3000,
+    elevation: 10,
+    backgroundColor: 'transparent',
+  },
+  actionButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.lg,
+  },
+  skipButton: {
+    backgroundColor: '#1E1E1E',
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  undoButton: {
+    backgroundColor: '#1E1E1E',
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  acceptButton: {
+    backgroundColor: '#1E1E1E',
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  emptyTitle: {
+    ...typography.h2,
+    color: '#FFFFFF',
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  emptyText: {
+    ...typography.body,
+    color: '#A1A1AA',
+    textAlign: 'center',
+  },
+  refreshButton: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.gold,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  refreshText: {
+    ...typography.button,
+    color: '#121212',
+  },
+  swipeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: borderRadius.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
+    pointerEvents: 'none',
+  },
+  acceptOverlay: {
+    backgroundColor: colors.success,
+  },
+  rejectOverlay: {
+    backgroundColor: colors.error,
+  },
+  swipeLabel: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  swipeLabelText: {
+    ...typography.h2,
+    color: colors.white,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+  iconButton: {
+    padding: 8,
+  },
+});

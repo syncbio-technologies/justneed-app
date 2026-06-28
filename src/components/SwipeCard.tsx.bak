@@ -1,0 +1,604 @@
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  useWindowDimensions,
+  TouchableOpacity,
+  Animated,
+  Image,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Job } from '../types';
+import { parseJobDescription } from '../utils/formatDescription';
+import { colors } from '../constants/colors';
+import { spacing, borderRadius } from '../constants/spacing';
+import { typography } from '../constants/typography';
+import { shadows } from '../constants/shadows';
+
+interface SwipeCardProps {
+  job: Job;
+  onFavouriteToggle?: (jobId: string, isFavourite: boolean) => void;
+  onPress?: () => void;
+  onExpandChange?: (isExpanded: boolean) => void;
+}
+
+const DARK_BG = '#121212';
+const DARK_SURFACE = '#1E1E1E';
+const GOLD = colors.gold;
+const GOLD_LIGHT = 'rgba(212, 175, 55, 0.15)';
+const TEXT_PRIMARY = '#FFFFFF';
+const TEXT_SECONDARY = '#A1A1AA';
+
+export const SwipeCard: React.FC<SwipeCardProps> = ({
+  job,
+  onFavouriteToggle,
+  onPress,
+  onExpandChange,
+}) => {
+  const { width, height } = useWindowDimensions();
+  // Cap the card on tablets — without this it becomes an unwieldy 700pt+
+  // block. Phones still get the 90% width feel.
+  const CARD_WIDTH = Math.min(width * 0.9, 520);
+  // On short screens (iPhone SE) 65% can crowd the action buttons; on tall
+  // screens (Pro Max) it leaves a tasteful amount of breathing room.
+  const CARD_HEIGHT = Math.min(Math.max(height * 0.65, 480), 720);
+
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isFavourite, setIsFavourite] = useState(job.isBookmarked || false);
+  const [logoError, setLogoError] = useState(false);
+
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const translateYAnim = useRef(new Animated.Value(0)).current;
+
+  if (!job.title || !job.company) {
+    console.error('Invalid job data:', job);
+    return null;
+  }
+
+  const handleFavouriteToggle = () => {
+    const next = !isFavourite;
+    setIsFavourite(next);
+    onFavouriteToggle?.(job.id, next);
+
+    if (next) {
+      scaleAnim.setValue(0);
+      opacityAnim.setValue(1);
+      translateYAnim.setValue(0);
+
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 4,
+          tension: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateYAnim, {
+          toValue: -50,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.delay(400),
+          Animated.timing(opacityAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+    }
+  };
+
+  const handleExpandToggle = () => {
+    const next = !isExpanded;
+    setIsExpanded(next);
+    onExpandChange?.(next);
+  };
+
+  const descriptionPreview = job.description?.substring(0, 120) ?? '';
+  const hasMoreDescription = (job.description?.length ?? 0) > 120;
+  const descriptionSections = parseJobDescription(job.description ?? '');
+
+  // Deadline warning
+  const getDeadlineWarning = () => {
+    if (!job.postedDate) return null;
+    const deadline = new Date(job.postedDate);
+    deadline.setDate(deadline.getDate() + 30);
+    const daysLeft = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (daysLeft <= 7 && daysLeft > 0) return `${daysLeft} days left`;
+    return null;
+  };
+  const deadlineWarning = getDeadlineWarning();
+
+  const workModeIcon =
+    job.workMode === 'Remote'
+      ? 'wifi-outline'
+      : job.workMode === 'On-site'
+        ? 'business-outline'
+        : 'laptop-outline';
+
+  const COMPANY_BANNERS = [
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
+    'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80',
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
+    'https://images.unsplash.com/photo-1416339306562-f3d12fefd36f?w=800&q=80',
+    'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&q=80',
+    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80',
+    'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&q=80',
+    'https://images.unsplash.com/photo-1554469384-e58fac16e23a?w=800&q=80',
+  ];
+  
+  const getBannerImage = (companyName: string) => {
+    const sum = companyName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return COMPANY_BANNERS[sum % COMPANY_BANNERS.length];
+  };
+
+  const cleanDomain = job.company.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
+  const logoUrl = `https://logo.clearbit.com/${cleanDomain}`;
+
+  return (
+    <View style={[styles.goldWrapper, { width: CARD_WIDTH, height: CARD_HEIGHT }]}>
+      <View style={styles.card}>
+      {/* ─── NEW IMAGE HEADER ─── */}
+      <View style={styles.bannerContainer}>
+        {/* Pseudo-random high-quality office image based on company name */}
+        <Image
+          source={{ uri: getBannerImage(job.company) }}
+          style={styles.bannerImage}
+          resizeMode="cover"
+        />
+        
+        {/* Top Right Actions (Match Box + Fav Button) */}
+        <View style={styles.topRightActions}>
+          {job.matchScore != null && job.matchScore > 0 && (
+            <View style={styles.matchBoxOverlay}>
+              <Text style={styles.matchBoxScore}>{job.matchScore}%</Text>
+              <Text style={styles.matchBoxLabel}>Match</Text>
+              <Ionicons name="trending-up" size={16} color="#22C55E" style={{ marginTop: 2 }} />
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.bannerFavBtn} onPress={handleFavouriteToggle}>
+            <Ionicons
+              name={isFavourite ? 'heart' : 'heart-outline'}
+              size={22}
+              color={isFavourite ? '#EF4444' : 'rgba(255,255,255,0.9)'}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Floating Logo overlay */}
+        <View style={styles.logoOverlayBox}>
+          {!logoError ? (
+            <Image
+              source={{ uri: logoUrl }}
+              style={styles.logoImage}
+              onError={() => setLogoError(true)}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={styles.companyInitialLarge}>{job.company[0]}</Text>
+          )}
+        </View>
+      </View>
+
+      {/* ─── HEADER CONTENT BELOW BANNER ─── */}
+      <View style={styles.headerContentContainer}>
+        <View style={styles.titleRow}>
+          <View style={styles.titleLeft}>
+            {job.matchScore != null && job.matchScore > 80 && (
+              <View style={styles.topMatchBadge}>
+                <Ionicons name="star" size={12} color={GOLD} />
+                <Text style={styles.topMatchText}>Top Match</Text>
+              </View>
+            )}
+            <Text style={styles.newJobTitle} numberOfLines={1}>{job.title}</Text>
+            <Text style={styles.newCompanyName}>
+              {job.company} {job.location ? `• ${job.location}` : ''}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* ─── SCROLLABLE BODY ─── */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Badges */}
+        <View style={styles.badges}>
+          {job.matchScore != null && job.matchScore > 50 && (
+            <View style={[styles.badge, styles.badgeMatch]}>
+              <Ionicons name="sparkles" size={10} color={GOLD} />
+              <Text style={[styles.badgeText]}>
+                {job.matchScore}% match
+              </Text>
+            </View>
+          )}
+
+          {!!deadlineWarning && (
+            <View style={[styles.badge, styles.badgeUrgent]}>
+              <Ionicons name="alert-circle-outline" size={10} color="#EF4444" />
+              <Text style={[styles.badgeText, { color: '#EF4444' }]}>{deadlineWarning}</Text>
+            </View>
+          )}
+
+          <View style={[styles.badge, styles.badgeDefault]}>
+            <Ionicons name="briefcase-outline" size={10} color={GOLD} />
+            <Text style={[styles.badgeText]}>{job.type || 'Full-time'}</Text>
+          </View>
+
+          <View style={[styles.badge, styles.badgeDefault]}>
+            <Ionicons name={workModeIcon} size={10} color={GOLD} />
+            <Text style={[styles.badgeText]}>{job.workMode || 'On-site'}</Text>
+          </View>
+        </View>
+
+        {/* Info rows */}
+        <View style={styles.infoRows}>
+          <View style={styles.infoRow}>
+            <Ionicons name="location-outline" size={14} color={GOLD} />
+            <Text style={styles.infoText}>{job.location || 'Location not specified'}</Text>
+          </View>
+
+          {(job.experienceRequired || job.experienceYears) && (
+            <View style={styles.infoRow}>
+              <Ionicons name="briefcase-outline" size={14} color={GOLD} />
+              <Text style={styles.infoText}>
+                {job.experienceYears
+                  ? `${job.experienceYears}+ years experience`
+                  : 'Experience required'}
+              </Text>
+            </View>
+          )}
+
+          {job.salary && (
+            <View style={styles.infoRow}>
+              <Ionicons name="cash-outline" size={14} color={GOLD} />
+              <Text style={styles.infoText}>{job.salary}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Description */}
+        <View style={styles.descSection}>
+          <Text style={styles.sectionTitle}>About the role</Text>
+          {isExpanded ? (
+            descriptionSections.map((s, i) => (
+              <Text key={i} style={styles.descText}>{s.content}</Text>
+            ))
+          ) : (
+            <Text style={styles.descText}>
+              {descriptionPreview}
+              {hasMoreDescription ? '...' : ''}
+            </Text>
+          )}
+          {hasMoreDescription && (
+            <TouchableOpacity style={styles.readMoreBtn} onPress={handleExpandToggle}>
+              <Text style={styles.readMoreText}>{isExpanded ? 'Read less' : 'Read more'}</Text>
+              <Ionicons
+                name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                size={14}
+                color={GOLD}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Requirements */}
+        {job.requirements && Array.isArray(job.requirements) && job.requirements.length > 0 && (
+          <View style={styles.reqSection}>
+            <Text style={styles.sectionTitle}>Requirements</Text>
+            {job.requirements.map((req, i) => {
+              const text =
+                typeof req === 'string'
+                  ? req
+                  : (req as any)?.label || (req as any)?.name || JSON.stringify(req);
+              if (typeof text !== 'string') return null;
+              return (
+                <View key={i} style={styles.reqRow}>
+                  <Ionicons name="checkmark-circle" size={14} color={GOLD} style={styles.reqIcon} />
+                  <Text style={styles.reqText}>{text}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Heart Animation Overlay */}
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          styles.heartOverlay,
+          {
+            opacity: opacityAnim,
+            transform: [
+              { scale: scaleAnim },
+              { translateY: translateYAnim }
+            ]
+          }
+        ]}
+        pointerEvents="none"
+      >
+        <Ionicons name="heart" size={120} color="#EF4444" />
+      </Animated.View>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  goldWrapper: {
+    borderRadius: 22,
+    padding: 2,
+    backgroundColor: GOLD,
+    shadowColor: GOLD,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  card: {
+    flex: 1,
+    backgroundColor: DARK_BG,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+
+  // ── NEW HEADER STYLES ───────────────────────────────
+  bannerContainer: {
+    height: 160,
+    width: '100%',
+    position: 'relative',
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  topRightActions: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  matchBoxOverlay: {
+    backgroundColor: 'rgba(18, 18, 18, 0.75)',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  bannerFavBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(18, 18, 18, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  matchBoxScore: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#22C55E',
+  },
+  matchBoxLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+  logoOverlayBox: {
+    position: 'absolute',
+    bottom: -24,
+    left: 16,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#121212',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    zIndex: 10,
+  },
+  companyInitialLarge: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#121212',
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 14,
+  },
+  headerContentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 32,
+    paddingBottom: 16,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  titleLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  topMatchBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.3)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 8,
+    gap: 4,
+  },
+  topMatchText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: GOLD,
+  },
+  newJobTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+    marginBottom: 4,
+  },
+  newCompanyName: {
+    fontSize: 14,
+    color: TEXT_SECONDARY,
+    fontWeight: '500',
+  },
+
+  // ── BODY ────────────────────────────────────────────
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 14,
+    paddingBottom: 10,
+  },
+
+  // Badges
+  badges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 12,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+    borderRadius: 20,
+  },
+  badgeDefault: {
+    backgroundColor: GOLD_LIGHT,
+  },
+  badgeMatch: {
+    backgroundColor: GOLD_LIGHT,
+  },
+  badgeUrgent: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: GOLD,
+  },
+
+  // Info rows
+  infoRows: {
+    marginBottom: 12,
+    gap: 7,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  infoText: {
+    fontSize: 12,
+    color: TEXT_SECONDARY,
+    fontWeight: '500',
+    flex: 1,
+  },
+
+  // Description
+  descSection: {
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+    marginBottom: 8,
+  },
+  descText: {
+    fontSize: 14,
+    color: TEXT_SECONDARY,
+    lineHeight: 22,
+  },
+  readMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginTop: 4,
+  },
+  readMoreText: {
+    fontSize: 12,
+    color: GOLD,
+    fontWeight: '600',
+  },
+
+  // Requirements
+  reqSection: {
+    marginBottom: 10,
+  },
+  reqRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginBottom: 5,
+  },
+  reqIcon: {
+    marginTop: 1,
+    flexShrink: 0,
+  },
+  reqText: {
+    fontSize: 12,
+    color: TEXT_SECONDARY,
+    flex: 1,
+    lineHeight: 18,
+  },
+
+  // ── FOOTER ───────────────────────────────────────────
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  footerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  footerText: {
+    fontSize: 11,
+    color: TEXT_SECONDARY,
+    fontWeight: '500',
+  },
+  heartOverlay: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    elevation: 10,
+  },
+});

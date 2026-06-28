@@ -1,0 +1,39 @@
+{
+  "cli": {
+    "version": ">= 16.32.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://justneed-backend.onrender.com",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCJa3EQEH8VzUmhHLO1hwfb60ljyTbyuQg",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "justneed-248b8.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "justneed-248b8",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "justneed-248b8.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "292474506519",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:292474506519:android:da7e0a6d4df62842d8fb52",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "292474506519-qr5cebblgsc1itkps0j7fbafa3tnvs2d.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "292474506519-linl9g6iqffpri165u2svl2414mbepkd.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "292474506519-kqd5d8k6gneqgfm9raq5r3ojpe6gm3lj.apps.googleusercontent.com"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
