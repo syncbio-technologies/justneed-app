@@ -30,7 +30,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={{ flex: 1, backgroundColor: colors.white, justifyContent: 'center', padding: spacing.lg }}>
+        <View style={{ flex: 1, backgroundColor: colors.surface, justifyContent: 'center', padding: spacing.lg }}>
           <ScrollView>
             <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.error, marginBottom: spacing.md }}>
               Something went wrong

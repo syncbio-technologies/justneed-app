@@ -275,7 +275,7 @@ export default function SignUpScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.bg,
   },
   flex: {
     flex: 1,
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 15,
     color: colors.ink,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     fontFamily: 'Inter_400Regular',
   },
 
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingLeft: 16,
     paddingRight: 10,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
   },
   inputInner: {
     flex: 1,
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 10,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
   },
   googleBtnDisabled: {
     opacity: 0.5,

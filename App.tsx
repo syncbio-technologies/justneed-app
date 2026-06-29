@@ -12,9 +12,10 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import {
-  Fraunces_700Bold,
-  Fraunces_900Black,
-} from '@expo-google-fonts/fraunces';
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -54,45 +55,32 @@ function TabNavigator() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarShowLabel: false,
-        tabBarLabelPosition: 'below-icon',
-
-        tabBarIcon: ({ focused }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-          let iconColor = focused ? '#C9A84C' : '#555555';
-
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: colors.gold,
+        tabBarInactiveTintColor: colors.tabInactive,
+        tabBarLabelStyle: {
+          fontFamily: 'Inter_700Bold',
+          fontSize: 10.5,
+          marginTop: 1,
+          letterSpacing: 0.2,
+        },
+        tabBarIcon: ({ focused, color }) => {
+          let iconName: keyof typeof Ionicons.glyphMap = 'ellipse-outline';
           switch (route.name) {
             case 'Swipe':
-              iconName = 'home';
+              iconName = focused ? 'albums' : 'albums-outline';
               break;
-
             case 'Pinned':
-              iconName = 'heart';
+              iconName = focused ? 'bookmark' : 'bookmark-outline';
               break;
-
             case 'Applications':
-              iconName = 'checkmark-circle';
+              iconName = focused ? 'briefcase' : 'briefcase-outline';
               break;
-
-            case 'Skills':
-              iconName = 'card';
-              break;
-
             case 'Profile':
-              iconName = 'person-circle';
+              iconName = focused ? 'person' : 'person-outline';
               break;
-
-            default:
-              iconName = 'help-outline';
           }
-
-          return (
-            <Ionicons
-              name={iconName}
-              size={focused ? 28 : 24}
-              color={iconColor}
-            />
-          );
+          return <Ionicons name={iconName} size={23} color={color} />;
         },
 
         tabBarStyle: {
@@ -101,35 +89,24 @@ function TabNavigator() {
           right: 0,
           bottom: 0,
           height: 80,
-          backgroundColor: '#111111',
+          backgroundColor: colors.bgDeep,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
-          borderTopWidth: 0,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.2,
-          shadowRadius: 12,
-          elevation: 12,
           paddingTop: spacing.sm,
-          paddingBottom: spacing.md,
+          paddingBottom: spacing.lg,
+          elevation: 0,
         },
-
         tabBarItemStyle: {
-          height: 70,
-          justifyContent: 'center',
-          alignItems: 'center',
           paddingVertical: spacing.xs,
         },
-
-        tabBarActiveTintColor: '#C9A84C',
-        tabBarInactiveTintColor: '#555555',
       })}
     >
-      <Tab.Screen name="Swipe" component={SwipeScreen} />
-      <Tab.Screen name="Pinned" component={PinnedScreen} />
-      <Tab.Screen name="Applications" component={ApplicationsScreen} />
-      <Tab.Screen name="Skills" component={SkillsTabScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Swipe" component={SwipeScreen} options={{ tabBarLabel: 'Discover' }} />
+      <Tab.Screen name="Pinned" component={PinnedScreen} options={{ tabBarLabel: 'Saved' }} />
+      <Tab.Screen name="Applications" component={ApplicationsScreen} options={{ tabBarLabel: 'Applied' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );
 }
@@ -359,8 +336,9 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_700Bold,
-    Fraunces_700Bold,
-    Fraunces_900Black,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
   });
 
   if (!fontsLoaded) {

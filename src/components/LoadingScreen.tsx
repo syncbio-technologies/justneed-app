@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     top: 2,
   },
 });

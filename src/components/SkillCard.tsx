@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   qrWrapper: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     padding: 8,
     borderRadius: 10,
     borderWidth: 1,

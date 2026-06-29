@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.gray50,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     borderWidth: 1.5,
     borderColor: colors.gray200,
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   },
   inputContainerFocused: {
     borderColor: colors.primary,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
   },
   inputContainerError: {
     borderColor: colors.error,

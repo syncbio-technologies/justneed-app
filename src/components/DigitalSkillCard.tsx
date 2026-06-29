@@ -555,7 +555,7 @@ skillsSection: {
   skillChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.gray50,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.gray200,
     paddingHorizontal: spacing.sm,
@@ -627,7 +627,7 @@ skillsSection: {
     paddingTop:50,
   },
   qrContainer: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     padding: 12,
     borderRadius: 16,
     marginBottom: 10,
@@ -658,7 +658,7 @@ skillsSection: {
     marginTop: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     ...shadows.sm,
   },

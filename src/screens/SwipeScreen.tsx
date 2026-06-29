@@ -22,26 +22,27 @@ import { useFavorites } from '../context/FavoritesContext';
 import { useGoogleAuth } from '../services/googleAuthService';
 import { colors } from '../constants/colors';
 import { spacing, borderRadius } from '../constants/spacing';
-import { typography } from '../constants/typography';
+import { typography, fontFamily } from '../constants/typography';
 import { shadows } from '../constants/shadows';
 import justNeedLogo from '../../assets/logo.png';
 import ApplyModal from '../components/ApplyModal';
 
 const SWIPE_THRESHOLD_RATIO = 0.25;
 
-// ─── Premium Design Tokens ─────────────────────────────────────────────────
-const DARK_BG = '#0A0A0A';
-const DARK_SURFACE = '#111111';
-const DARK_ELEVATED = '#181818';
-const GOLD_RICH = '#C9A84C';
-const GOLD_SOFT = 'rgba(201,168,76,0.11)';
-const GOLD_BORDER = 'rgba(201,168,76,0.26)';
-const GOLD_GLOW = 'rgba(201,168,76,0.18)';
-const TEXT_PRIMARY = '#F5F5F5';
-const TEXT_SECONDARY = '#8A8A8E';
-const TEXT_TERTIARY = '#48484C';
-const DIVIDER = 'rgba(255,255,255,0.06)';
-const GREEN_ACCENT = '#22C55E';
+// ─── Dark redesign tokens (mapped to constants/colors — REDESIGN.md §1) ─────
+const DARK_BG = colors.bg;
+const DARK_SURFACE = colors.surface;
+const DARK_ELEVATED = colors.surfaceElev;
+const GOLD_RICH = colors.gold;
+const GOLD_SOFT = colors.goldTint;
+const GOLD_BORDER = colors.border;
+const GOLD_GLOW = 'rgba(212,165,116,0.18)';
+const TEXT_PRIMARY = colors.textPrimary;
+const TEXT_SECONDARY = colors.textSecondary;
+const TEXT_TERTIARY = colors.textMuted;
+const DIVIDER = colors.border;
+const GREEN_ACCENT = colors.match;
+const RED_ACCENT = colors.danger;
 
 export default function SwipeScreen({ navigation }: any) {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -353,7 +354,7 @@ export default function SwipeScreen({ navigation }: any) {
               {/* Apply overlay */}
               <Animated.View style={[styles.swipeOverlay, styles.acceptOverlay, { opacity: acceptOpacity }]}>
                 <View style={styles.swipeLabel}>
-                  <Ionicons name="checkmark-circle" size={56} color={GOLD_RICH} />
+                  <Ionicons name="checkmark-circle" size={56} color={GREEN_ACCENT} />
                   <Text style={styles.swipeLabelText}>APPLY</Text>
                 </View>
               </Animated.View>
@@ -361,7 +362,7 @@ export default function SwipeScreen({ navigation }: any) {
               {/* Skip overlay */}
               <Animated.View style={[styles.swipeOverlay, styles.rejectOverlay, { opacity: rejectOpacity }]}>
                 <View style={styles.swipeLabel}>
-                  <Ionicons name="close-circle" size={56} color={GOLD_RICH} />
+                  <Ionicons name="close-circle" size={56} color={RED_ACCENT} />
                   <Text style={styles.swipeLabelText}>SKIP</Text>
                 </View>
               </Animated.View>
@@ -412,10 +413,7 @@ export default function SwipeScreen({ navigation }: any) {
             </View>
             {/* Wordmark & Slogan */}
             <View style={styles.brandTextContainer}>
-              <Text style={styles.brandWordmark}>
-                <Text style={{ color: GOLD_RICH }}>Just</Text>
-                <Text style={{ color: GOLD_RICH }}>Need</Text>
-              </Text>
+              <Text style={styles.brandWordmark}>justneed</Text>
               <Text style={styles.brandSlogan}>Find • Match • Grow</Text>
             </View>
           </View>
@@ -454,14 +452,14 @@ export default function SwipeScreen({ navigation }: any) {
             {/* Skip */}
             <Animated.View style={{ transform: [{ scale: skipScale }] }}>
               <TouchableOpacity style={[styles.actionButton, styles.skipButton]} onPress={handleSkip} activeOpacity={0.8}>
-                <Ionicons name="close" size={18} color={GOLD_RICH} />
+                <Ionicons name="close" size={24} color={RED_ACCENT} />
               </TouchableOpacity>
             </Animated.View>
 
             {/* Accept / Apply */}
             <Animated.View style={{ transform: [{ scale: acceptScale }] }}>
-              <TouchableOpacity style={[styles.actionButton, styles.acceptButton]} onPress={handleAccept} activeOpacity={0.8}>
-                <Ionicons name="checkmark" size={18} color={GOLD_RICH} />
+              <TouchableOpacity style={[styles.actionButton, styles.acceptButton]} onPress={handleAccept} activeOpacity={0.85}>
+                <Ionicons name="checkmark" size={26} color={DARK_BG} />
               </TouchableOpacity>
             </Animated.View>
           </View>
@@ -531,8 +529,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   brandWordmark: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontFamily: fontFamily.displayBold,
+    fontSize: 20,
+    color: TEXT_PRIMARY,
     letterSpacing: -0.4,
   },
   brandSlogan: {
@@ -618,16 +617,19 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     backgroundColor: DARK_ELEVATED,
+    borderColor: 'rgba(224,100,138,0.45)',
   },
   undoButton: {
     backgroundColor: DARK_ELEVATED,
   },
   acceptButton: {
-    backgroundColor: DARK_ELEVATED,
-    // Extra gold glow for the primary CTA
+    backgroundColor: GOLD_RICH, // gold-filled primary CTA
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     shadowColor: GOLD_RICH,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.4,
     shadowRadius: 18,
     elevation: 10,
     borderColor: GOLD_RICH,
@@ -698,16 +700,16 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   acceptOverlay: {
-    backgroundColor: 'rgba(34,197,94,0.18)',
+    backgroundColor: 'rgba(88,201,162,0.16)',
     borderWidth: 2,
-    borderColor: 'rgba(34,197,94,0.4)',
-    borderRadius: 24,
+    borderColor: 'rgba(88,201,162,0.5)',
+    borderRadius: 28,
   },
   rejectOverlay: {
-    backgroundColor: 'rgba(239,68,68,0.18)',
+    backgroundColor: 'rgba(224,100,138,0.16)',
     borderWidth: 2,
-    borderColor: 'rgba(239,68,68,0.4)',
-    borderRadius: 24,
+    borderColor: 'rgba(224,100,138,0.5)',
+    borderRadius: 28,
   },
   swipeLabel: {
     alignItems: 'center',

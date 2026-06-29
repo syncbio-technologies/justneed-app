@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray200,
   },
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   cardSection: {
     alignItems: 'center',
     paddingVertical: spacing.xl,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
   },
   loadingContainer: {
     height: hp(36),
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   },
   featuresSection: {
     padding: spacing.lg,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     marginTop: spacing.sm,
   },
   featureItem: {
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     padding: spacing.lg,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     marginTop: spacing.sm,
   },
   primaryButton: {
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.primary,
     paddingVertical: spacing.md,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   infoSection: {
     padding: spacing.lg,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     marginTop: spacing.sm,
     marginBottom: spacing.xl,
   },

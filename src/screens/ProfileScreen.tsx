@@ -1135,7 +1135,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     ...shadows.sm,
@@ -1243,7 +1243,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   changePasswordCard: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     flexDirection: 'row',
@@ -1290,7 +1290,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray200,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
   },
   modalTitle: {
     ...typography.h3,
@@ -1308,7 +1308,7 @@ const styles = StyleSheet.create({
   },
   modalFooter: {
     padding: spacing.md,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.gray200,
   },
@@ -1496,7 +1496,7 @@ const styles = StyleSheet.create({
   },
   // Context strip
   aiContextStrip: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: spacing.md,
     marginBottom: 16,
@@ -1538,7 +1538,7 @@ const styles = StyleSheet.create({
   },
   // Text area card
   aiTextAreaWrapper: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: spacing.md,
     marginBottom: 16,
@@ -1625,14 +1625,14 @@ const styles = StyleSheet.create({
   aiFeaturePillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#065F46',
+    color: colors.match,
   },
   // Footer
   aiModalFooter: {
     paddingHorizontal: spacing.md,
     paddingTop: 14,
     paddingBottom: spacing.md,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: '#EAECF4',
     alignItems: 'center',
@@ -1720,7 +1720,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: '#EAECF4',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   editorHeaderCenter: {
     alignItems: 'center',
@@ -1790,7 +1790,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: spacing.md,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: '#EAECF4',
     gap: 12,
@@ -1819,7 +1819,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   editorCard: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 20,
     padding: spacing.md,
     shadowColor: '#000',
@@ -1916,7 +1916,7 @@ const styles = StyleSheet.create({
   },
   editorFooter: {
     padding: spacing.md,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: '#EAECF4',
     shadowColor: '#000',

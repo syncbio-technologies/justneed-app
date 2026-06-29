@@ -263,7 +263,7 @@ export default function LoginScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.indigo },
   flex: { flex: 1 },
-  scroll: { flexGrow: 1, backgroundColor: colors.cream },
+  scroll: { flexGrow: 1, backgroundColor: colors.bg },
 
   // Hero
   hero: {
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   // Form card
   formCard: {
     flex: 1,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.bg,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     marginTop: -28,
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 15,
     color: colors.ink,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
     fontFamily: fontFamily.regular,
   },
   inputRow: {
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingLeft: 16,
     paddingRight: 10,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
   },
   inputInner: {
     flex: 1,
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.line,
     borderRadius: 12,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
   },
   socialBtnDisabled: { opacity: 0.55 },
   socialBtnText: { fontSize: 15, color: colors.ink, fontFamily: fontFamily.bold },
@@ -456,5 +456,5 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 22,
   },
-  successText: { fontSize: 14, color: '#0F5132', flexShrink: 1, fontFamily: fontFamily.regular },
+  successText: { fontSize: 14, color: colors.match, flexShrink: 1, fontFamily: fontFamily.regular },
 });

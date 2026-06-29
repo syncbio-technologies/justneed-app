@@ -24,7 +24,7 @@ export const OAuthButton: React.FC<OAuthButtonProps> = ({
         return {
           label: 'Continue with Google',
           icon: 'logo-google',
-          backgroundColor: colors.white,
+          backgroundColor: colors.surface,
           borderColor: colors.gray200,
           textColor: colors.text,
         };
@@ -48,7 +48,7 @@ export const OAuthButton: React.FC<OAuthButtonProps> = ({
         return {
           label: 'Continue',
           icon: 'logo-google',
-          backgroundColor: colors.white,
+          backgroundColor: colors.surface,
           borderColor: colors.gray200,
           textColor: colors.text,
         };
