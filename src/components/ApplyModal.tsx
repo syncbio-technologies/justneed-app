@@ -1,5 +1,6 @@
  import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors } from '../constants/colors';
 
 interface ApplyModalProps {
   visible: boolean;

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
+import { fontFamily } from '../constants/typography';
 import { hp } from '../utils/responsive';
 import { useAuth } from '../context/AuthContext';
 
@@ -36,12 +37,11 @@ export default function GetStartedScreen({ navigation }: any) {
       </View>
 
       <View style={styles.textBlock}>
-        <Text style={styles.welcome}>Welcome To</Text>
-        <Text style={styles.appName}>JustNeed App</Text>
+        <Text style={styles.welcome}>Find your next role.</Text>
+        <Text style={styles.appName}>Just swipe.</Text>
         <Text style={styles.description}>
-          JustNeed is the platform that helps everyone find their next
-          opportunity — swipe, match, and get hired by employers who want your
-          skills.
+          AI matches you to jobs that fit. Swipe right to apply, left to skip —
+          and get hired by employers who want your skills.
         </Text>
       </View>
 
@@ -51,7 +51,7 @@ export default function GetStartedScreen({ navigation }: any) {
           activeOpacity={0.85}
           style={styles.nextButton}
         >
-          <Ionicons name="arrow-forward" size={22} color={colors.primary} />
+          <Ionicons name="arrow-forward" size={24} color={colors.bg} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -61,7 +61,7 @@ export default function GetStartedScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.bg,
     paddingHorizontal: 24,
   },
   header: {
@@ -100,11 +100,12 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   appName: {
-    fontSize: 28,
-    color: colors.white,
-    fontWeight: '700',
-    marginTop: 4,
-    marginBottom: 12,
+    fontFamily: fontFamily.display,
+    fontSize: 34,
+    color: colors.gold,
+    letterSpacing: -0.8,
+    marginTop: 2,
+    marginBottom: 14,
   },
   description: {
     fontSize: 14,
@@ -118,16 +119,16 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   nextButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.surface,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 6,
   },
 });

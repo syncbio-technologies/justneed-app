@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 13.5,
-    color: colors.goldDeep,
+    color: colors.goldSoft,
     fontFamily: fontFamily.bold,
     marginBottom: 8,
   },
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
 
   signupRow: { marginTop: 26, alignItems: 'center' },
   signupText: { fontSize: 14, color: colors.slate, fontFamily: fontFamily.regular },
-  signupLink: { color: colors.goldDeep, fontFamily: fontFamily.bold },
+  signupLink: { color: colors.goldSoft, fontFamily: fontFamily.bold },
 
   successBanner: {
     flexDirection: 'row',
