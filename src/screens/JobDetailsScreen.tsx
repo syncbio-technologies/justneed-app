@@ -246,19 +246,14 @@ export default function JobDetailsScreen({ route, navigation }: JobDetailsScreen
         {(job.application_email || job.application_url || job.webpage_url) && (
           <SectionCard title="How to Apply">
             {job.application_email ? (
-              <TouchableOpacity 
-                style={s.contactRow}
-                onPress={() => {
-                  import('react-native').then(({ Linking }) => {
-                    Linking.openURL(`mailto:${job.application_email}`).catch(() => 
-                      Alert.alert('Error', 'Could not open the email client.')
-                    );
-                  });
-                }}
-              >
-                <Ionicons name="mail-outline" size={16} color={T.blue} />
-                <Text style={[s.contactText, { textDecorationLine: 'underline' }]}>{job.application_email}</Text>
-              </TouchableOpacity>
+              // #11: employer accepts email applications → JustNeed sends the
+              // Skill Card + application directly. No external link shown.
+              <View style={s.contactRow}>
+                <Ionicons name="checkmark-circle-outline" size={16} color={T.blue} />
+                <Text style={s.contactText}>
+                  Your Skill Card and application are sent directly to the employer — no extra steps needed.
+                </Text>
+              </View>
             ) : (job.application_url || job.webpage_url) ? (
               <TouchableOpacity 
                 style={[s.contactRow, { marginBottom: 0 }]}
