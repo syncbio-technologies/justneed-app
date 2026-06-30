@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Animated,
   Image,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,7 +26,7 @@ interface SwipeCardProps {
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 // ─── Conic match ring (RN has no conic-gradient → SVG arc) ──────────────
-const MatchRing: React.FC<{ score: number; size?: number }> = ({ score, size = 64 }) => {
+const MatchRing: React.FC<{ score: number; size?: number }> = ({ score, size = 62 }) => {
   const stroke = 6;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -44,11 +45,9 @@ const MatchRing: React.FC<{ score: number; size?: number }> = ({ score, size = 6
           fill="none"
           strokeLinecap="round"
           strokeDasharray={`${c * pct} ${c * (1 - pct)}`}
-          // start the arc at 12 o'clock
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>
-      {/* inner navy disc with the % */}
       <View style={[styles.ringInner, { width: size - 14, height: size - 14, borderRadius: (size - 14) / 2 }]}>
         <Text style={[styles.ringPct, { color }]}>{Math.round(score)}</Text>
       </View>
@@ -61,7 +60,7 @@ const matchLabel = (s: number) => (s >= 85 ? 'Strong match' : s >= 70 ? 'Good ma
 export const SwipeCard: React.FC<SwipeCardProps> = ({ job, onFavouriteToggle, onPress }) => {
   const { width, height } = useWindowDimensions();
   const CARD_WIDTH = Math.min(width * 0.9, 460);
-  const CARD_HEIGHT = Math.min(Math.max(height * 0.62, 460), 680);
+  const CARD_HEIGHT = Math.min(Math.max(height * 0.64, 480), 700);
 
   const [isFavourite, setIsFavourite] = useState(job.isBookmarked || false);
   const [logoError, setLogoError] = useState(false);
@@ -96,10 +95,16 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ job, onFavouriteToggle, on
   const eyebrow = [job.company, job.location].filter(Boolean).join('  ·  ').toUpperCase();
 
   const facts: { icon: IconName; label: string }[] = [];
-  if (job.location) facts.push({ icon: 'location-outline', label: job.location });
   if (job.salary) facts.push({ icon: 'cash-outline', label: job.salary });
   facts.push({ icon: 'briefcase-outline', label: job.type || 'Full-time' });
   if (job.workMode) facts.push({ icon: 'navigate-outline', label: job.workMode });
+
+  const description = (job.description || '').trim();
+
+  // Top (swipeable) card has no onPress → must be a plain View so the parent
+  // PanGestureHandler receives the swipe. Preview cards (with onPress) are tappable.
+  const Wrapper: any = onPress ? TouchableOpacity : View;
+  const wrapperProps = onPress ? { activeOpacity: 0.95, onPress } : {};
 
   return (
     <Animated.View
@@ -121,8 +126,8 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ job, onFavouriteToggle, on
         end={{ x: 0.85, y: 1 }}
         style={styles.card}
       >
-        <TouchableOpacity activeOpacity={0.95} onPress={onPress} style={styles.inner}>
-          {/* top: logo tile + bookmark */}
+        <Wrapper {...wrapperProps} style={styles.inner}>
+          {/* HEADER: logo tile + company (#7) + bookmark */}
           <View style={styles.topRow}>
             <View style={styles.logoTile}>
               {!logoError ? (
@@ -136,6 +141,12 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ job, onFavouriteToggle, on
                 <Text style={styles.logoInitial}>{job.company[0]?.toUpperCase()}</Text>
               )}
             </View>
+            <View style={styles.headerText}>
+              <Text style={styles.company} numberOfLines={1}>{job.company}</Text>
+              {job.location ? (
+                <Text style={styles.headerLoc} numberOfLines={1}>{job.location}</Text>
+              ) : null}
+            </View>
             <Animated.View style={{ transform: [{ scale: favScale }] }}>
               <TouchableOpacity onPress={toggleFav} style={styles.bookmarkBtn} hitSlop={8} activeOpacity={0.8}>
                 <Ionicons
@@ -147,11 +158,10 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ job, onFavouriteToggle, on
             </Animated.View>
           </View>
 
-          {/* eyebrow + title */}
-          <Text style={styles.eyebrow} numberOfLines={1}>{eyebrow}</Text>
+          {/* TITLE (#8 larger) */}
           <Text style={styles.title} numberOfLines={3}>{job.title}</Text>
 
-          {/* match block */}
+          {/* MATCH */}
           {hasMatch ? (
             <View style={styles.matchRow}>
               <MatchRing score={score} />
@@ -162,28 +172,33 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ job, onFavouriteToggle, on
             </View>
           ) : null}
 
-          <View style={styles.divider} />
-
-          {/* facts */}
+          {/* FACTS */}
           <View style={styles.facts}>
             {facts.map((f, i) => (
               <View style={styles.factRow} key={i}>
                 <View style={styles.factIcon}>
-                  <Ionicons name={f.icon} size={15} color={colors.gold} />
+                  <Ionicons name={f.icon} size={14} color={colors.gold} />
                 </View>
                 <Text style={styles.factText} numberOfLines={1}>{f.label}</Text>
               </View>
             ))}
           </View>
 
-          <View style={styles.flexSpacer} />
+          <View style={styles.divider} />
 
-          {/* swipe-up hint */}
-          <View style={styles.hintRow}>
-            <Text style={styles.hintText}>Swipe up for full description</Text>
-            <Ionicons name="arrow-up" size={13} color={colors.textMuted} />
-          </View>
-        </TouchableOpacity>
+          {/* ABOUT THE ROLE (#8) — bigger, scrollable */}
+          <Text style={styles.sectionTitle}>About the role</Text>
+          <ScrollView
+            style={styles.aboutScroll}
+            contentContainerStyle={{ paddingBottom: 8 }}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled
+          >
+            <Text style={styles.aboutText}>
+              {description || 'No description was provided for this role. Tap to view full details.'}
+            </Text>
+          </ScrollView>
+        </Wrapper>
       </LinearGradient>
     </Animated.View>
   );
@@ -205,27 +220,22 @@ const styles = StyleSheet.create({
     borderColor: dark.border,
     overflow: 'hidden',
   },
-  inner: {
-    flex: 1,
-    padding: 22,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 22,
-  },
+  inner: { flex: 1, padding: 20 },
+  topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   logoTile: {
-    width: 54,
-    height: 54,
-    borderRadius: 16,
+    width: 50,
+    height: 50,
+    borderRadius: 15,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   logoImg: { width: '78%', height: '78%' },
-  logoInitial: { fontSize: 24, fontFamily: fontFamily.display, color: dark.surface },
+  logoInitial: { fontSize: 22, fontFamily: fontFamily.display, color: dark.surface },
+  headerText: { flex: 1, marginLeft: 12 },
+  company: { fontFamily: fontFamily.displayBold, fontSize: 16, color: colors.textPrimary },
+  headerLoc: { fontFamily: fontFamily.regular, fontSize: 12.5, color: colors.textSecondary, marginTop: 2 },
   bookmarkBtn: {
     width: 40,
     height: 40,
@@ -236,49 +246,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  eyebrow: {
-    fontFamily: fontFamily.bold,
-    fontSize: 11,
-    letterSpacing: 1.3,
-    color: colors.goldSoft,
-    marginBottom: 10,
-  },
   title: {
     fontFamily: fontFamily.display,
-    fontSize: 32,
-    lineHeight: 37,
-    letterSpacing: -0.8,
+    fontSize: 27,
+    lineHeight: 32,
+    letterSpacing: -0.6,
     color: colors.textPrimary,
   },
-  matchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginTop: 22,
-  },
+  matchRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 16 },
   ringInner: {
     position: 'absolute',
     backgroundColor: dark.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ringPct: { fontFamily: fontFamily.display, fontSize: 19, letterSpacing: -0.5 },
+  ringPct: { fontFamily: fontFamily.display, fontSize: 18, letterSpacing: -0.5 },
   matchText: { flex: 1 },
   matchLabel: { fontFamily: fontFamily.displayBold, fontSize: 15, marginBottom: 3 },
   matchReason: { fontFamily: fontFamily.regular, fontSize: 12.5, color: colors.textSecondary, lineHeight: 18 },
-  divider: { height: 1, backgroundColor: dark.border, marginTop: 22 },
-  facts: { marginTop: 18, gap: 13 },
-  factRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  facts: { marginTop: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  factRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   factIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 9,
     backgroundColor: dark.goldTint,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  factText: { flex: 1, fontFamily: fontFamily.regular, fontSize: 14, color: colors.textPrimary },
-  flexSpacer: { flex: 1, minHeight: 12 },
-  hintRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  hintText: { fontFamily: fontFamily.regular, fontSize: 12, color: colors.textMuted, letterSpacing: 0.2 },
+  factText: { fontFamily: fontFamily.regular, fontSize: 13.5, color: colors.textPrimary },
+  divider: { height: 1, backgroundColor: dark.border, marginTop: 18, marginBottom: 14 },
+  sectionTitle: {
+    fontFamily: fontFamily.displayBold,
+    fontSize: 16,
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+  aboutScroll: { flex: 1 },
+  aboutText: { fontFamily: fontFamily.regular, fontSize: 14.5, lineHeight: 22, color: colors.textSecondary },
 });

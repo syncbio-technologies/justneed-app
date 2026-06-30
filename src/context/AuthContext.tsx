@@ -156,19 +156,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        if (Platform.OS === 'web') {
-          const result = await getRedirectResult(getFirebaseAuthInstance());
-          if (result) console.log('[Auth] Redirect sign-in result received');
-        }
-      } catch (error) {
-        console.error('[Auth] Init error:', error);
-      } finally {
-        await loadUser();
-      }
-    };
-    init();
+    // Web sign-in uses signInWithPopup (not redirect), so we intentionally do
+    // NOT call getRedirectResult here — doing so could bounce a freshly
+    // logged-out user back toward Google's auth page on reload (#14). We rely
+    // solely on the app's own stored session.
+    loadUser();
   }, []);
 
   // Debug: log user state transitions to track logout/login
